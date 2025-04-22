@@ -1,20 +1,19 @@
-# PhonePe Laravel Package
+# PhonePe API v2 Laravel Integration
 
-A Laravel package for integrating the PhonePe payment gateway, supporting both UAT and production environments.
+A Laravel package for integrating the **PhonePe API v2** payment gateway, developed by Yogesh Gupta. This is a standalone implementation designed to simplify **PhonePe payment gateway** integration in Laravel applications, supporting the **PhonePe checkout v2** API for secure and efficient transactions.
 
 ## Features
 
-- Initiate payments with PhonePe's checkout API.
-- Verify payment status.
+- Initiate payments using the **PhonePe API v2**.
+- Verify payment status with the **PhonePe checkout v2** endpoint.
 - Support for UAT and production environments.
-- Token caching for efficient API calls.
-- Laravel configuration and facade for easy integration.
+- Token caching for efficient **PhonePe API v2** calls.
+- Laravel configuration and facade for easy **Laravel PhonePe integration**.
 
 ## Requirements
 
-- PHP &gt;= 8.0
-- Laravel 9.x, 10.x, or 11.x
-- Composer
+- PHP &gt;= 8.1
+- Laravel 9.x, 10.x, 11.x, or 12.x
 
 ## Installation
 
@@ -52,7 +51,7 @@ The configuration file (`config/phonepe.php`) allows you to customize:
 - Environment (`uat` or `prod`)
 - Client ID, version, and secret for both environments
 - Token cache path
-- Redirect URL after payment
+- Redirect URL after **PhonePe API v2** payment
 
 Example configuration:
 
@@ -170,4 +169,4 @@ Report bugs or suggest features by opening an issue on the GitHub repository.
 
 ## License
 
-This package is licensed under the MIT License.
+This **Laravel PhonePe integration** package is licensed under the MIT License.
