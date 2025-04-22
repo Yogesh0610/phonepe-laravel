@@ -15,18 +15,24 @@
     },
     "autoload": {
         "psr-4": {
-            "YogeshGupta\\PhonePe\\": "src/"
+            "Yogeshgupta\\PhonepeLaravel\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "YogeshGupta\\PhonePe\\PhonePeServiceProvider"
+                "Yogeshgupta\\PhonepeLaravel\\PhonePeServiceProvider"
             ],
             "aliases": {
-                "PhonePe": "YogeshGupta\\PhonePe\\Facades\\PhonePe"
+                "PhonePe": "Yogeshgupta\\PhonepeLaravel\\Facades\\PhonePe"
             }
         }
     },
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "post-autoload-dump": [
+            "@php artisan package:discover --ansi"
+        ]
+    }
 }

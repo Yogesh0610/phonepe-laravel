@@ -1,6 +1,5 @@
 <?php
-
-namespace YogeshGupta\PhonePe\Facades;
+namespace Yogeshgupta\PhonepeLaravel\Facades;
 
 use Illuminate\Support\Facades\Facade;
 

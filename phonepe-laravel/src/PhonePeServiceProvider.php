@@ -1,6 +1,6 @@
 <?php
 
-namespace YogeshGupta\PhonePe;
+namespace Yogeshgupta\PhonepeLaravel;
 
 use Illuminate\Support\ServiceProvider;
 

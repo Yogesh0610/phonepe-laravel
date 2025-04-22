@@ -1,6 +1,6 @@
 <?php
 
-namespace YogeshGupta\PhonePe;
+namespace Yogeshgupta\PhonepeLaravel;
 
 use Illuminate\Support\Facades\Storage;
 
@@ -39,9 +39,7 @@ class PhonePePayment
                     return null;
                 }
 
-                // Check if token exists and hasn't
-
- expired (with 60 seconds buffer)
+                // Check if token exists and hasn't expired
                 if (isset($tokenData['access_token']) && isset($tokenData['expires_at']) &&
                     $tokenData['expires_at'] > (time() + 60)) {
                     return $tokenData;
