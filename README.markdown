@@ -34,13 +34,20 @@ This will create a `config/phonepe.php` file in your Laravel project.
 3. Add your PhonePe credentials to your `.env` file:
 
 ```env
+# Set environment: 'uat' for testing, 'prod' for live
 PHONEPE_ENV=uat
-PHONEPE_UAT_CLIENT_ID=SU2504041946024365502022
-PHONEPE_UAT_CLIENT_VERSION=1
-PHONEPE_UAT_CLIENT_SECRET=ae83cba2-07c0-43a9-b0c4-1d84c261fd12
-PHONEPE_PROD_CLIENT_ID=your_prod_client_id
-PHONEPE_PROD_CLIENT_VERSION=your_prod_client_version
-PHONEPE_PROD_CLIENT_SECRET=your_prod_client_secret
+
+# UAT Credentials
+PHONEPE_UAT_CLIENT_ID=uat-client-id-here
+PHONEPE_UAT_CLIENT_VERSION=v1
+PHONEPE_UAT_CLIENT_SECRET=uat-secret-key-here
+
+# Production Credentials
+PHONEPE_PROD_CLIENT_ID=prod-client-id-here
+PHONEPE_PROD_CLIENT_VERSION=v1
+PHONEPE_PROD_CLIENT_SECRET=prod-secret-key-here
+
+# Redirect URL after payment
 PHONEPE_REDIRECT_URL=https://your-app.com/phonepe/process
 ```
 
@@ -59,9 +66,9 @@ Example configuration:
 return [
     'environment' => env('PHONEPE_ENV', 'uat'),
     'uat' => [
-        'client_id' => env('PHONEPE_UAT_CLIENT_ID', 'SU2504041946024365502022'),
-        'client_version' => env('PHONEPE_UAT_CLIENT_VERSION', 1),
-        'client_secret' => env('PHONEPE_UAT_CLIENT_SECRET', 'ae83cba2-07c0-43a9-b0c4-1d84c261fd12'),
+        'client_id' => env('PHONEPE_UAT_CLIENT_ID', ''),
+        'client_version' => env('PHONEPE_UAT_CLIENT_VERSION', ''),
+        'client_secret' => env('PHONEPE_UAT_CLIENT_SECRET', ''),
         'base_url' => 'https://api-preprod.phonepe.com/apis/pg-sandbox',
         'auth_url' => 'https://api-preprod.phonepe.com/apis/pg-sandbox',
         'token_cache_path' => storage_path('app/phonepe/phonepe_token_uat.json'),
