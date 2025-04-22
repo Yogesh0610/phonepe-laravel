@@ -79,7 +79,7 @@ return [
 ```php
 use Yogeshgupta\PhonepeLaravel\Facades\PhonePe;
 
-$result = PhonePe::initiatePayment(10000, 'SUB123'); // Amount in paisa, subscription ID
+ $result = PhonePe::initiatePayment($amount, $subscription_id, $payload);
 
 if ($result['success']) {
     return redirect($result['redirectUrl']);
@@ -115,12 +115,24 @@ use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
-    public function initiate(Request $request)
+  public function initiate(Request $request)
     {
-        $amount = $request->input('amount'); // Amount in paisa
-        $subscriptionId = $request->input('subscription_id');
+        $payload = [
+            'merchantOrderId' => uniqid(),
+            'amount' => 10000, // Amount in paisa
+            'expireAfter' => 1200,
+            'metaInfo' => [
+                'udf1' => 'subscription_payment',
+                'udf2' => 'sub_id_SUB123',
+                'udf3' => 'student_checkout',
+                'udf4' => '',
+                'udf5' => '',
+            ],
+        ];
+        $subscription_id = 52567823689234; // Example subscription ID
+        $amount = 10000; // Amount in paisa (100.00 INR)
+        $result = PhonePe::initiatePayment($amount, $subscription_id, $payload);
 
-        $result = PhonePe::initiatePayment($amount, $subscriptionId);
 
         if ($result['success']) {
             return redirect($result['redirectUrl']);
@@ -128,6 +140,7 @@ class PaymentController extends Controller
 
         return back()->withErrors(['error' => $result['error']]);
     }
+
 
     public function verify(Request $request)
     {
