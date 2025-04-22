@@ -19,6 +19,9 @@ class PhonePePayment
     public function __construct()
     {
         $this->environment = config('phonepe.environment', 'uat');
+        if (!in_array($this->environment, ['uat', 'prod'])) {
+            throw new \InvalidArgumentException('Invalid environment specified. Use "uat" or "prod".');
+        }
 
         // Set environment-specific configurations
         $config = config("phonepe.{$this->environment}");
@@ -27,7 +30,37 @@ class PhonePePayment
         $this->client_secret = $config['client_secret'] ?? '';
         $this->base_url = $config['base_url'] ?? '';
         $this->auth_url = $config['auth_url'] ?? '';
-        $this->token_cache_file = $config['token_cache_path'] ?? '';
+        $this->token_cache_file = config('phonepe.token_cache_path', 'phonepe/token_cache.json');
+
+        // Validate required configuration
+        $requiredConfigs = ['client_id', 'client_version', 'client_secret', 'base_url', 'auth_url'];
+        foreach ($requiredConfigs as $key) {
+            if (empty($this->$key)) {
+                throw new \InvalidArgumentException("Missing required configuration: phonepe.{$this->environment}.{$key}");
+            }
+        }
+
+        // Ensure the redirect URL is set
+        if (!config('phonepe.redirect_url')) {
+            throw new \InvalidArgumentException('Redirect URL is not set in the configuration.');
+        }
+
+        // Ensure the token cache directory is writable
+        $cacheDir = dirname(storage_path($this->token_cache_file));
+        if (!is_dir($cacheDir) && !mkdir($cacheDir, 0755, true)) {
+            throw new \RuntimeException('Failed to create token cache directory: ' . $cacheDir);
+        }
+        if (!is_writable($cacheDir)) {
+            throw new \RuntimeException('Token cache directory is not writable: ' . $cacheDir);
+        }
+
+        // Validate token cache file if it exists
+        if (Storage::exists($this->token_cache_file)) {
+            $content = Storage::get($this->token_cache_file);
+            if (!empty($content) && json_decode($content, true) === null && json_last_error() !== JSON_ERROR_NONE) {
+                throw new \RuntimeException('Token cache file is not a valid JSON file: ' . $this->token_cache_file);
+            }
+        }
 
         // Define static paymentFlow configuration
         $this->staticPaymentFlow = [
@@ -68,11 +101,6 @@ class PhonePePayment
     private function saveToken(array $tokenData): void
     {
         try {
-            // Ensure cache directory exists
-            $cacheDir = dirname(storage_path($this->token_cache_file));
-            if (!is_dir($cacheDir)) {
-                mkdir($cacheDir, 0755, true);
-            }
             Storage::put($this->token_cache_file, json_encode($tokenData));
         } catch (\Exception $e) {
             \Log::error('PhonePe: Token cache write error: ' . $e->getMessage());
@@ -162,10 +190,9 @@ class PhonePePayment
             // Add dynamic message to static paymentFlow
             $finalPaymentFlow = $this->staticPaymentFlow;
             $finalPaymentFlow['paymentFlow']['message'] = 'Payment for order ID: ' . $order_id;
-            // Ensure the redirectUrl is set in the payload
-            if (!isset($payload['merchantUrls']['redirectUrl'])) {
-                throw new \Exception('Invalid payment response: No redirect URL');
-            }
+            $finalPaymentFlow['paymentFlow']['merchantUrls']['redirectUrl'] = config('phonepe.redirect_url') . '?merchantOrderId=' . $payload['merchantOrderId'];
+
+
             // Merge the provided payload with static paymentFlow
             $finalPayload = array_merge_recursive($finalPaymentFlow, $payload);
 
