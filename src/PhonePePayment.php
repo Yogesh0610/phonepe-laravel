@@ -6,14 +6,15 @@ use Illuminate\Support\Facades\Storage;
 
 class PhonePePayment
 {
-    private $environment;
-    private $client_id;
-    private $client_version;
-    private $client_secret;
-    private $grant_type = "client_credentials";
-    private $base_url;
-    private $auth_url;
-    private $token_cache_file;
+    private string $environment;
+    private string $client_id;
+    private string $client_version;
+    private string $client_secret;
+    private string $grant_type = 'client_credentials';
+    private string $base_url;
+    private string $auth_url;
+    private string $token_cache_file;
+    private array $staticPaymentFlow;
 
     public function __construct()
     {
@@ -21,15 +22,25 @@ class PhonePePayment
 
         // Set environment-specific configurations
         $config = config("phonepe.{$this->environment}");
-        $this->client_id = $config['client_id'];
-        $this->client_version = $config['client_version'];
-        $this->client_secret = $config['client_secret'];
-        $this->base_url = $config['base_url'];
-        $this->auth_url = $config['auth_url'];
-        $this->token_cache_file = $config['token_cache_path'];
+        $this->client_id = $config['client_id'] ?? '';
+        $this->client_version = $config['client_version'] ?? '';
+        $this->client_secret = $config['client_secret'] ?? '';
+        $this->base_url = $config['base_url'] ?? '';
+        $this->auth_url = $config['auth_url'] ?? '';
+        $this->token_cache_file = $config['token_cache_path'] ?? '';
+
+        // Define static paymentFlow configuration
+        $this->staticPaymentFlow = [
+            'paymentFlow' => [
+                'type' => 'PG_CHECKOUT',
+                'merchantUrls' => [
+                    'redirectUrl' => config('phonepe.redirect_url'),
+                ],
+            ],
+        ];
     }
 
-    private function getCachedToken()
+    private function getCachedToken(): ?array
     {
         try {
             if (Storage::exists($this->token_cache_file)) {
@@ -39,9 +50,11 @@ class PhonePePayment
                     return null;
                 }
 
-                // Check if token exists and hasn't expired
-                if (isset($tokenData['access_token']) && isset($tokenData['expires_at']) &&
-                    $tokenData['expires_at'] > (time() + 60)) {
+                // Check if token exists and hasn't expired (with 60-second buffer)
+                if (
+                    isset($tokenData['access_token'], $tokenData['expires_at']) &&
+                    $tokenData['expires_at'] > (time() + 60)
+                ) {
                     return $tokenData;
                 }
             }
@@ -52,13 +65,13 @@ class PhonePePayment
         }
     }
 
-    private function saveToken($tokenData)
+    private function saveToken(array $tokenData): void
     {
         try {
             // Ensure cache directory exists
-            $cache_dir = dirname($this->token_cache_file);
-            if (!is_dir($cache_dir)) {
-                mkdir($cache_dir, 0755, true);
+            $cacheDir = dirname(storage_path($this->token_cache_file));
+            if (!is_dir($cacheDir)) {
+                mkdir($cacheDir, 0755, true);
             }
             Storage::put($this->token_cache_file, json_encode($tokenData));
         } catch (\Exception $e) {
@@ -66,9 +79,9 @@ class PhonePePayment
         }
     }
 
-    public function getAccessToken()
+    public function getAccessToken(): ?array
     {
-        // Check for cached token first
+        // Check for cached token
         $cachedToken = $this->getCachedToken();
         if ($cachedToken) {
             return $cachedToken;
@@ -103,17 +116,17 @@ class PhonePePayment
             curl_close($curl);
 
             $tokenData = json_decode($response, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if ($tokenData === null || json_last_error() !== JSON_ERROR_NONE) {
                 throw new \Exception('JSON decode error: ' . json_last_error_msg());
             }
 
             if (!isset($tokenData['access_token']) || empty($tokenData['access_token'])) {
-                throw new \Exception('Failed to obtain access token');
+                throw new \Exception('Failed to obtain access token: ' . ($tokenData['error'] ?? 'Unknown error'));
             }
 
             $tokenData = [
                 'access_token' => $tokenData['access_token'],
-                'expires_at' => $tokenData['expires_at'] ?? time() + 3600,
+                'expires_at' => isset($tokenData['expires_in']) ? time() + $tokenData['expires_in'] : time() + 3600,
             ];
 
             // Cache the new token
@@ -125,7 +138,7 @@ class PhonePePayment
         }
     }
 
-    public function initiatePayment($amount, $subscription_id)
+    public function initiatePayment(int $amount, string $order_id, array $payload): array
     {
         try {
             $tokenData = $this->getAccessToken();
@@ -133,26 +146,28 @@ class PhonePePayment
                 throw new \Exception('Unable to get access token');
             }
 
-            $morderid = uniqid();
-            $payload = [
-                'merchantOrderId' => $morderid,
-                'amount' => (int)$amount, // Amount in paisa
-                'expireAfter' => 1200,
-                'metaInfo' => [
-                    'udf1' => 'subscription_payment',
-                    'udf2' => 'sub_id_' . $subscription_id,
-                    'udf3' => 'student_checkout',
-                    'udf4' => '',
-                    'udf5' => '',
-                ],
-                'paymentFlow' => [
-                    'type' => 'PG_CHECKOUT',
-                    'message' => 'Payment for subscription ID: ' . $subscription_id,
-                    'merchantUrls' => [
-                        'redirectUrl' => config('phonepe.redirect_url', 'https://your-app.com/process'),
-                    ],
-                ],
-            ];
+            // Validate payload
+            if (!isset($payload['metaInfo']) || !is_array($payload['metaInfo'])) {
+                throw new \Exception('Invalid payload: metaInfo is required and must be an array');
+            }
+
+            // Generate merchantOrderId if not provided
+            if (!isset($payload['merchantOrderId'])) {
+                $payload['merchantOrderId'] = uniqid();
+            }
+
+            // Ensure amount is set in payload
+            $payload['amount'] = (int) $amount;
+
+            // Add dynamic message to static paymentFlow
+            $finalPaymentFlow = $this->staticPaymentFlow;
+            $finalPaymentFlow['paymentFlow']['message'] = 'Payment for order ID: ' . $order_id;
+            // Ensure the redirectUrl is set in the payload
+            if (!isset($payload['merchantUrls']['redirectUrl'])) {
+                throw new \Exception('Invalid payment response: No redirect URL');
+            }
+            // Merge the provided payload with static paymentFlow
+            $finalPayload = array_merge_recursive($finalPaymentFlow, $payload);
 
             $curl = curl_init();
             curl_setopt_array($curl, [
@@ -164,7 +179,7 @@ class PhonePePayment
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => json_encode($payload),
+                CURLOPT_POSTFIELDS => json_encode($finalPayload),
                 CURLOPT_HTTPHEADER => [
                     'Content-Type: application/json',
                     'Authorization: O-Bearer ' . $tokenData['access_token'],
@@ -190,10 +205,10 @@ class PhonePePayment
                 'success' => true,
                 'orderId' => $paymentInfo['orderId'],
                 'redirectUrl' => $paymentInfo['redirectUrl'],
-                'merchantOrderId' => $morderid,
+                'merchantOrderId' => $payload['merchantOrderId'],
             ];
         } catch (\Exception $e) {
-            \Log::error('PhonePe: Payment Error: ' . $e->getMessage());
+            \Log::error('PhonePe: Payment Error: ' . $e->getMessage(), ['order_id' => $order_id]);
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -201,7 +216,7 @@ class PhonePePayment
         }
     }
 
-    public function verifyPhonePePayment($merchantOrderId)
+    public function verifyPhonePePayment(string $merchantOrderId): array
     {
         try {
             $tokenData = $this->getAccessToken();
@@ -231,13 +246,11 @@ class PhonePePayment
             }
             curl_close($curl);
 
-            \Log::info('PhonePe: Payment status API raw response for merchantOrderId ' . $merchantOrderId . ': ' . $response);
             $getInfo = json_decode($response, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new \Exception('JSON decode error: ' . json_last_error_msg());
             }
 
-            \Log::info('PhonePe: Parsed payment status response for merchantOrderId ' . $merchantOrderId . ': ' . json_encode($getInfo));
             return [
                 'success' => true,
                 'data' => $getInfo,
@@ -251,4 +264,3 @@ class PhonePePayment
         }
     }
 }
-?>
