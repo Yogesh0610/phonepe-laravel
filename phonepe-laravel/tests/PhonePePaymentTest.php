@@ -1,9 +1,9 @@
 <?php
 
-namespace YogeshGupta\PhonePe\Tests;
+namespace YogeshGupta\PhonepeLaravel\Tests;
 
 use Illuminate\Support\Facades\Storage;
-use YogeshGupta\PhonePe\PhonePePayment;
+use YogeshGupta\PhonepeLaravel\PhonePePayment;
 use Orchestra\Testbench\TestCase;
 
 class PhonePePaymentTest extends TestCase
