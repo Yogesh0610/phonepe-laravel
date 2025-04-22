@@ -77,7 +77,7 @@ return [
 ### Initiating a Payment
 
 ```php
-use YogeshGupta\PhonePe\Facades\PhonePe;
+use Yogeshgupta\PhonepeLaravel\Facades\PhonePe;
 
 $result = PhonePe::initiatePayment(10000, 'SUB123'); // Amount in paisa, subscription ID
 
@@ -92,7 +92,7 @@ if ($result['success']) {
 ### Verifying Payment Status
 
 ```php
-use YogeshGupta\PhonePe\Facades\PhonePe;
+use Yogeshgupta\PhonepeLaravel\Facades\PhonePe;
 
 $result = PhonePe::verifyPhonePePayment('merchantOrderId123');
 
@@ -110,7 +110,7 @@ if ($result['success']) {
 ```php
 namespace App\Http\Controllers;
 
-use YogeshGupta\PhonePe\Facades\PhonePe;
+use Yogeshgupta\PhonepeLaravel\Facades\PhonePe;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
