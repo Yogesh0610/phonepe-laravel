@@ -1,21 +1,36 @@
 {
     "name": "yogeshgupta/phonepe-laravel",
-    "description": "A Laravel package for integrating PhonePe payment gateway",
+    "description": "Complete PhonePe Payment Gateway v2 integration for Laravel with OAuth, Webhook, Auto-Logging, Events & Facade",
+    "keywords": ["laravel", "phonepe", "payment-gateway", "india", "pg", "webhook", "oauth"],
     "type": "library",
     "license": "MIT",
     "authors": [
         {
             "name": "Yogesh Gupta",
-            "email": "yk68785@gmail.com"
+            "email": "yk68785@gmail.com",
+            "homepage": "https://github.com/Yogesh0610",
+            "role": "Developer"
         }
     ],
     "require": {
-        "php": "^8.1",
-        "illuminate/support": "^9.0|^10.0|^11.0|^12.0"
+        "php": "^8.1|^8.2|^8.3",
+        "illuminate/support": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/http": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/events": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/console": "^9.0|^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^7.0|^8.0|^9.0",
+        "phpunit/phpunit": "^9.0|^10.0|^11.0"
     },
     "autoload": {
         "psr-4": {
             "Yogeshgupta\\PhonepeLaravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Yogeshgupta\\PhonepeLaravel\\Tests\\": "tests/"
         }
     },
     "extra": {
@@ -28,11 +43,17 @@
             }
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
     "scripts": {
         "post-autoload-dump": [
             "@php artisan package:discover --ansi"
-        ]
+        ],
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "config": {
+        "sort-packages": true,
+        "preferred-install": "dist"
     }
 }
